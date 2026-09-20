@@ -77,7 +77,7 @@ fun CubeVisualizer(
                 PllCycleDiagram(arrows = case.pllArrows)
             }
             DiagramType.F2L_SLOT -> {
-                F2lSlotDiagram()
+                F2lSlotDiagram(facelets = case.f2lFacelets)
             }
             DiagramType.GENERIC_CUBE -> {
                 IsometricCubeDiagram(accentColor = Color(0xFF00E5FF))
@@ -201,51 +201,83 @@ private fun PllCycleDiagram(arrows: List<Pair<Int, Int>>) {
 }
 
 @Composable
-private fun F2lSlotDiagram() {
-    val greenFront = Color(0xFF00E676)
-    val redRight = Color(0xFFFF5252)
-    val whiteBottom = Color(0xFFE0E0E0)
+private fun F2lSlotDiagram(facelets: String?) {
     val slotGlow = Color(0xFF00E5FF)
 
-    Canvas(modifier = Modifier.size(90.dp)) {
-        val w = size.width
-        val h = size.height
-        val cx = w / 2
-        val cy = h / 2
+    if (facelets == null || facelets.length < 27) {
+        IsometricCubeDiagram(accentColor = slotGlow)
+        return
+    }
 
-        // Draw stylized isometric F2L corner/edge slot
-        val frontFace = Path().apply {
-            moveTo(cx - 30.dp.toPx(), cy - 5.dp.toPx())
-            lineTo(cx, cy + 12.dp.toPx())
-            lineTo(cx, cy + 38.dp.toPx())
-            lineTo(cx - 30.dp.toPx(), cy + 20.dp.toPx())
-            close()
-        }
-        drawPath(frontFace, greenFront.copy(alpha = 0.85f))
+    val uFace = facelets.substring(0, 9)
+    val fFace = facelets.substring(9, 18)
+    val rFace = facelets.substring(18, 27)
 
-        val rightFace = Path().apply {
-            moveTo(cx, cy + 12.dp.toPx())
-            lineTo(cx + 30.dp.toPx(), cy - 5.dp.toPx())
-            lineTo(cx + 30.dp.toPx(), cy + 20.dp.toPx())
-            lineTo(cx, cy + 38.dp.toPx())
-            close()
-        }
-        drawPath(rightFace, redRight.copy(alpha = 0.85f))
+    Canvas(modifier = Modifier.size(96.dp)) {
+        val s = size.width
 
-        val topFace = Path().apply {
-            moveTo(cx, cy - 22.dp.toPx())
-            lineTo(cx + 30.dp.toPx(), cy - 5.dp.toPx())
-            lineTo(cx, cy + 12.dp.toPx())
-            lineTo(cx - 30.dp.toPx(), cy - 5.dp.toPx())
-            close()
+        // Iso affine projection. World: +x = right, +y = up, +z = front.
+        val ex = Offset( 0.16f * s, -0.05f * s)
+        val ez = Offset(-0.07f * s,  0.13f * s)
+        val ey = Offset( 0.00f * s, -0.22f * s)
+        val origin = Offset(0.50f * s, 0.62f * s)
+
+        fun project(x: Float, y: Float, z: Float): Offset = Offset(
+            origin.x + x * ex.x + z * ez.x + y * ey.x,
+            origin.y + x * ex.y + z * ez.y + y * ey.y
+        )
+
+        fun stickerColor(ch: Char): Color = when (ch) {
+            'y' -> Color(0xFFFFD600)
+            'r' -> Color(0xFFFF5252)
+            'g' -> Color(0xFF00E676)
+            'w' -> Color(0xFFE0E0E0)
+            'o' -> Color(0xFFFF9800)
+            'b' -> Color(0xFF2196F3)
+            else -> Color(0xFF262C3A)
         }
-        drawPath(topFace, whiteBottom)
+
+        // world(row,col) gives the 3D center of the sticker at the given face grid
+        // cell. Facelet rows are bottom-first for side faces, so callers flip rows.
+        fun drawFace(face: String, world: (row: Int, col: Int) -> Triple<Float, Float, Float>) {
+            for (row in 0..2) {
+                for (col in 0..2) {
+                    val (wx, wy, wz) = world(row, col)
+                    val center = project(wx, wy, wz)
+                    val half = 0.115f * s
+                    val path = Path().apply {
+                        moveTo(center.x, center.y - half)
+                        lineTo(center.x + half, center.y)
+                        lineTo(center.x, center.y + half)
+                        lineTo(center.x - half, center.y)
+                        close()
+                    }
+                    drawPath(path, stickerColor(face[row * 3 + col]))
+                    drawPath(path, Color(0xFF10141E), style = Stroke(width = 1.2.dp.toPx()))
+                }
+            }
+        }
+
+        // U face (top): row0 = back (z=-1) .. row2 = front (z=+1); cols x=-1..1
+        drawFace(uFace) { row, col ->
+            Triple((col - 1).toFloat(), 1f, (row - 1).toFloat())
+        }
+
+        // F face (front): facelet row0 = D-side (y=-1) .. row2 = U-side (y=+1)
+        drawFace(fFace) { row, col ->
+            Triple((col - 1).toFloat(), (row - 1).toFloat(), 1f)
+        }
+
+        // R face (right): facelet row0 = D-side .. row2 = U-side; col0 = front (z=+1)
+        drawFace(rFace) { row, col ->
+            Triple(1f, (row - 1).toFloat(), (1 - col).toFloat())
+        }
 
         // Highlight the FR slot target
         drawCircle(
             color = slotGlow,
-            radius = 6.dp.toPx(),
-            center = Offset(cx + 12.dp.toPx(), cy + 14.dp.toPx())
+            radius = 5.dp.toPx(),
+            center = project(0.66f, 0.35f, 1f)
         )
     }
 }

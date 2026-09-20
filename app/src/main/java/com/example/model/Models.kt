@@ -61,5 +61,8 @@ data class AlgorithmCase(
     val diagramType: DiagramType = DiagramType.GENERIC_CUBE,
     val yellowPattern: List<Boolean> = emptyList(), // 9 booleans for 3x3 OLL top face
     val pllArrows: List<Pair<Int, Int>> = emptyList(), // Pairs of indices (0..7 around perimeter) for swaps
+    val alternatives: List<String> = emptyList(), // Additional algorithms for the same case
+    val setup: String? = null, // Scramble that produces this case from solved
+    val f2lFacelets: String? = null, // 27 chars: U9 + F9 + R9 facelets of the case state
     val isCustom: Boolean = false
 )
