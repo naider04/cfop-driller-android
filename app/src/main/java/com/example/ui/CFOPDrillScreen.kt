@@ -291,7 +291,8 @@ fun CFOPDrillScreen(
                             // Copy Algorithm button
                             IconButton(
                                 onClick = {
-                                    clipboardManager.setText(AnnotatedString(currentCase.algorithm))
+                                    val textToCopy = uiState.activeAlgorithm.ifBlank { currentCase.algorithm }
+                                    clipboardManager.setText(AnnotatedString(textToCopy))
                                     showCopiedSnackbar = true
                                 },
                                 modifier = Modifier.size(36.dp)
@@ -330,8 +331,9 @@ fun CFOPDrillScreen(
                                     )
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
+                                val displayedAlg = uiState.activeAlgorithm.ifBlank { currentCase.algorithm }
                                 Text(
-                                    text = currentCase.algorithm,
+                                    text = displayedAlg,
                                     style = MaterialTheme.typography.bodyLarge.copy(
                                         fontFamily = FontFamily.Monospace,
                                         fontWeight = FontWeight.Bold,
@@ -347,6 +349,102 @@ fun CFOPDrillScreen(
                                         color = Color(0xFF00E5FF),
                                         fontSize = 11.sp
                                     )
+                                )
+                            }
+                        }
+
+                        // Alternatives Selection Chips
+                        val allAlgs = listOf(currentCase.algorithm) + currentCase.alternatives
+                        if (allAlgs.size > 1) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = "ALGORITHM VARIATIONS (${allAlgs.size})",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = Color(0xFF64748B),
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 1.sp
+                                )
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            androidx.compose.foundation.lazy.LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                items(allAlgs.size) { idx ->
+                                    val alg = allAlgs[idx]
+                                    val isSelected = (alg == uiState.activeAlgorithm) || (idx == 0 && uiState.activeAlgorithm.isBlank())
+                                    val chipLabel = if (idx == 0) "Main" else "Alt $idx"
+
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(
+                                                if (isSelected) Color(0xFF00E5FF).copy(alpha = 0.2f)
+                                                else Color(0xFF1E2638)
+                                            )
+                                            .border(
+                                                1.dp,
+                                                if (isSelected) Color(0xFF00E5FF) else Color(0xFF2E3B55),
+                                                RoundedCornerShape(8.dp)
+                                            )
+                                            .clickable { viewModel.selectAlgorithm(alg) }
+                                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Text(
+                                                text = chipLabel,
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    color = if (isSelected) Color(0xFF00E5FF) else Color(0xFF94A3B8),
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 10.sp
+                                                )
+                                            )
+                                            Text(
+                                                text = if (alg.length > 20) alg.take(18) + "…" else alg,
+                                                style = MaterialTheme.typography.bodySmall.copy(
+                                                    fontFamily = FontFamily.Monospace,
+                                                    color = if (isSelected) Color.White else Color(0xFFCBD5E1),
+                                                    fontSize = 11.sp
+                                                )
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Setup / Scramble info
+                        val setupScramble = currentCase.setup
+                        if (!setupScramble.isNullOrBlank()) {
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color(0xFF0D111A))
+                                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "SETUP: ",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        color = Color(0xFF64748B),
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 9.sp
+                                    )
+                                )
+                                Text(
+                                    text = setupScramble,
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        fontFamily = FontFamily.Monospace,
+                                        color = Color(0xFF94A3B8),
+                                        fontSize = 11.sp
+                                    ),
+                                    modifier = Modifier.weight(1f)
                                 )
                             }
                         }

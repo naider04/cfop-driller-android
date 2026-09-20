@@ -14,6 +14,7 @@ data class DrillUiState(
     val selectedSubCategory: String? = null,
     val searchQuery: String = "",
     val currentCase: AlgorithmCase? = null,
+    val activeAlgorithm: String = "",
     val currentSteps: List<MoveStep> = emptyList(),
     val activeStepIndex: Int = -1,
     val isPlaying: Boolean = false,
@@ -67,6 +68,20 @@ class CFOPDrillViewModel(application: Application) : AndroidViewModel(applicatio
         _uiState.update {
             it.copy(
                 currentCase = case,
+                activeAlgorithm = case.algorithm,
+                currentSteps = parsedSteps,
+                activeStepIndex = -1,
+                isPlaying = false
+            )
+        }
+    }
+
+    fun selectAlgorithm(algorithm: String) {
+        audioEngine.stopPlayback()
+        val parsedSteps = AlgorithmParser.parseAlgorithmMoves(algorithm)
+        _uiState.update {
+            it.copy(
+                activeAlgorithm = algorithm,
                 currentSteps = parsedSteps,
                 activeStepIndex = -1,
                 isPlaying = false
