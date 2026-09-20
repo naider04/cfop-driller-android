@@ -1,0 +1,6 @@
+{
+  "name": "CFOP Drill",
+  "description": "CFOP speedcubing algorithm trainer (F2L, OLL, PLL) with real-time audio drilling, speed pacing, metronome click, and step visualization.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
